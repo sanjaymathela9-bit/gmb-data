@@ -27,7 +27,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   });
 
   // REAL-TIME SYNC LOGIC
-  // Load data and listen for changes from other tabs
   useEffect(() => {
     const loadEntries = () => {
       const stored = localStorage.getItem('cp_entries');
@@ -42,7 +41,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
     loadEntries();
 
-    // Sync across tabs in real-time
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'cp_entries') {
         loadEntries();
@@ -56,19 +54,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const saveEntries = (newEntries: Entry[]) => {
     setEntries(newEntries);
     localStorage.setItem('cp_entries', JSON.stringify(newEntries));
-    // Manual trigger for same-tab updates if needed, 
-    // though state handles it locally.
   };
 
   const handleClearDatabase = () => {
-    if (confirm('DANGER: This will permanently delete ALL entries from the system. Continue?')) {
+    if (confirm('DANGER: This will permanently delete ALL entries (Manual & Bulk) from the system. Continue?')) {
       saveEntries([]);
     }
   };
 
   const handleClearOriginEntries = (origin: LeadOrigin) => {
-    if (confirm(`Are you sure you want to delete ALL ${origin} leads? This cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete ALL ${origin} leads? This action cannot be reversed.`)) {
       const remaining = entries.filter(e => e.origin !== origin);
+      saveEntries(remaining);
+    }
+  };
+
+  const handleDeleteMultipleEntries = (ids: string[]) => {
+    if (confirm(`Are you sure you want to delete ${ids.length} selected entries?`)) {
+      const remaining = entries.filter(e => !ids.includes(e.id));
       saveEntries(remaining);
     }
   };
@@ -118,11 +121,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
-      // Direct division of lead data by tab view
       if (view === 'manual-list' && entry.origin !== 'Manual') return false;
       if (view === 'bulk-list' && entry.origin !== 'Bulk') return false;
 
-      // Access control: Employees see their own or non-closed leads for collaboration
       const canSee = user.role === Role.ADMIN || 
                     entry.employeeId === user.id || 
                     (entry.status !== Status.CLOSED && entry.status !== Status.SALE_LOST);
@@ -132,7 +133,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       const searchMatch = !filters.search || 
                          entry.customerName.toLowerCase().includes(filters.search.toLowerCase()) ||
                          entry.mobileNumber.includes(filters.search) ||
-                         entry.sku.toLowerCase().includes(filters.search.toLowerCase());
+                         entry.sku.toLowerCase().includes(filters.search.toLowerCase()) ||
+                         entry.productDescription?.toLowerCase().includes(filters.search.toLowerCase());
       const statusMatch = !filters.status || entry.status === filters.status;
 
       return searchMatch && statusMatch;
@@ -174,14 +176,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           </button>
           <button 
             onClick={() => { setView('bulk-list'); setEditingEntry(null); }}
-            className={`py-5 px-1 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center gap-2 ${view === 'bulk-list' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
+            className={`py-5 px-1 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center gap-2 ml-6 ${view === 'bulk-list' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
           >
             <i className="fas fa-server"></i> BULK DATABASE
           </button>
           <div className="w-px h-6 bg-slate-200 mx-2 hidden sm:block"></div>
           <button 
             onClick={() => { setView('manual-add'); setEditingEntry(null); }}
-            className={`py-5 px-1 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center gap-2 ${view === 'manual-add' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
+            className={`py-5 px-1 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center gap-2 ml-6 ${view === 'manual-add' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
           >
             <i className="fas fa-edit"></i> MANUAL ADD
           </button>
@@ -189,7 +191,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             <>
               <button 
                 onClick={() => { setView('analytics'); setEditingEntry(null); }}
-                className={`py-5 px-1 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center gap-2 ${view === 'analytics' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
+                className={`py-5 px-1 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center gap-2 ml-6 ${view === 'analytics' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
               >
                 <i className="fas fa-chart-pie"></i> ANALYTICS
               </button>
@@ -243,7 +245,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                   <input 
                     type="text" 
-                    placeholder={`Search by name, mobile, or SKU in ${activeOrigin.toLowerCase()} database...`}
+                    placeholder={`Search by name, mobile, SKU, or product in ${activeOrigin.toLowerCase()} database...`}
                     className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                     value={filters.search}
                     onChange={e => setFilters({...filters, search: e.target.value})}
@@ -256,6 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 entries={filteredEntries} 
                 onEdit={(e) => { setEditingEntry(e); setView('manual-add'); }}
                 onDelete={handleDeleteEntry}
+                onDeleteMultiple={handleDeleteMultipleEntries}
                 onClearAll={() => handleClearOriginEntries(activeOrigin)}
                 activeOrigin={activeOrigin}
               />
@@ -290,7 +293,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         </div>
       </main>
       
-      <footer className="bg-white border-t border-slate-100 py-4 px-6">
+      <footer className="bg-white border-t border-slate-100 py-4 px-6 mt-auto">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           <span>&copy; 2024 Conversion Pro</span>
           <div className="flex items-center gap-2">

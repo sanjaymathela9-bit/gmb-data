@@ -18,6 +18,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ user, entry, onSubmit, onCancel }
     mobileNumber: entry?.mobileNumber || '',
     group: entry?.group || ProductGroup.APPLE,
     description: entry?.description || '',
+    productDescription: entry?.productDescription || '',
     sku: entry?.sku || '',
     skuDescription: entry?.skuDescription || '',
     status: entry?.status || Status.OPEN,
@@ -135,11 +136,33 @@ const EntryForm: React.FC<EntryFormProps> = ({ user, entry, onSubmit, onCancel }
               />
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">SKU Description</label>
+              <input 
+                type="text" 
+                placeholder="Specific model details..."
+                value={formData.skuDescription}
+                onChange={e => setFormData({...formData, skuDescription: e.target.value})}
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Product Description</label>
+              <input 
+                type="text" 
+                placeholder="Broad product info..."
+                value={formData.productDescription}
+                onChange={e => setFormData({...formData, productDescription: e.target.value})}
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              />
+            </div>
+          </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Item Description</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Additional Notes</label>
             <textarea 
-              rows={3}
-              placeholder="Add product specifics or requirements..."
+              rows={2}
+              placeholder="Any other specific requirements..."
               value={formData.description}
               onChange={e => setFormData({...formData, description: e.target.value})}
               className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"

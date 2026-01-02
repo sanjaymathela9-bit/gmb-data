@@ -37,6 +37,7 @@ export interface Entry {
   mobileNumber: string;
   group: ProductGroup;
   description: string;
+  productDescription: string;
   sku: string;
   skuDescription: string;
   status: Status;
