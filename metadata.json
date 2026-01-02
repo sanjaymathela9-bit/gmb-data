@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Conversion Pro - Customer Data & Sales Tracker",
+  "description": "A professional customer lead management and conversion analytics platform for retail and sales teams. Featuring role-based access, real-time analytics, and collaborative lead closing.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
